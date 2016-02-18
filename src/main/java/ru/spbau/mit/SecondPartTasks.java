@@ -36,8 +36,8 @@ public final class SecondPartTasks {
     private static final Random RNG = new Random(123);
 
     public static double piDividedBy4() {
-        return Stream.generate(() -> Math.pow(RNG.nextDouble() - RADIUS, 2) +
-                Math.pow(RNG.nextDouble() - RADIUS, 2))
+        return Stream.generate(() -> Math.pow(RNG.nextDouble() - RADIUS, 2)
+                + Math.pow(RNG.nextDouble() - RADIUS, 2))
                 .limit(ITER_CNT)
                 .mapToDouble(dist -> {
                     if (dist <= Math.pow(RADIUS, 2)) {

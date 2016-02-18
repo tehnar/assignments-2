@@ -35,11 +35,13 @@ public final class FirstPartTasks {
     }
 
     // Список альбомов, в которых есть хотя бы один трек с рейтингом более 95, отсортированный по названию
+    private static final int RATING_BORDER = 95;
+
     public static List<Album> sortedFavorites(Stream<Album> albums) {
         return albums
                 .filter((album) -> album.getTracks()
                         .stream()
-                        .anyMatch((track) -> track.getRating() > 95))
+                        .anyMatch((track) -> track.getRating() > RATING_BORDER))
                 .sorted((album1, album2) -> album1.getName().compareTo(album2.getName()))
                 .collect(Collectors.toList());
     }
