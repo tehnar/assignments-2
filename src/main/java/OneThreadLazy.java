@@ -9,11 +9,11 @@ public class OneThreadLazy<T> implements Lazy<T> {
     private T result = (T) NONE;
 
     OneThreadLazy(Supplier<T> supplier) {
-       this.supplier = supplier;
+        this.supplier = supplier;
     }
 
     public T get() {
-        if (result == (T)NONE) {
+        if (result == (T) NONE) {
             result = supplier.get();
             supplier = null;
         }
