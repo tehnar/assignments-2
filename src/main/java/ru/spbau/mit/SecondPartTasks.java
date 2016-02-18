@@ -29,15 +29,23 @@ public final class SecondPartTasks {
 
     // В квадрат с длиной стороны 1 вписана мишень.
     // Стрелок атакует мишень и каждый раз попадает в произвольную точку квадрата.
-    // Надо промоделировать этот процесс с помощью класса java.util.Random и посчитать, какова вероятность попасть в мишень.
+    // Надо промоделировать этот процесс с помощью класса java.util.Random и посчитать,
+    // какова вероятность попасть в мишень.
     private static final long ITER_CNT = 10000000;
     private static final double RADIUS = 0.5;
     private static final Random RNG = new Random(123);
 
     public static double piDividedBy4() {
-        return Stream.generate(() -> Math.pow(RNG.nextDouble() - RADIUS, 2) + Math.pow(RNG.nextDouble() - RADIUS, 2))
+        return Stream.generate(() -> Math.pow(RNG.nextDouble() - RADIUS, 2) +
+                Math.pow(RNG.nextDouble() - RADIUS, 2))
                 .limit(ITER_CNT)
-                .mapToDouble(dist -> dist <= Math.pow(RADIUS, 2) ? 1 : 0)
+                .mapToDouble(dist -> {
+                    if (dist <= Math.pow(RADIUS, 2)) {
+                        return 1;
+                    } else {
+                        return 0;
+                    }
+                })
                 .average()
                 .getAsDouble();
     }
@@ -48,7 +56,11 @@ public final class SecondPartTasks {
         return compositions
                 .entrySet()
                 .stream()
-                .max(Comparator.comparing(entry -> entry.getValue().stream().collect(Collectors.summingLong(String::length))))
+                .max(Comparator.comparing(entry ->
+                        entry
+                                .getValue()
+                                .stream()
+                                .collect(Collectors.summingLong(String::length))))
                 .map(Map.Entry::getKey)
                 .orElse(null);
     }
