@@ -11,9 +11,9 @@ import java.util.function.Supplier;
 public class LazyFactory {
     private static class OneThreadLazy<T> implements Lazy<T> {
         private Supplier<T> supplier;
-        T result;
+        private T result;
 
-        OneThreadLazy(Supplier<T> supplier) {
+        private OneThreadLazy(Supplier<T> supplier) {
             this.supplier = supplier;
         }
 
@@ -29,11 +29,11 @@ public class LazyFactory {
     }
 
     private static class MultiThreadLazy<T> implements Lazy<T> {
-        private static Object NONE = new Object();
+        private static final Object NONE = new Object();
         private Supplier<T> supplier;
         private volatile T result = (T) NONE;
 
-        MultiThreadLazy(Supplier<T> supplier) {
+        private MultiThreadLazy(Supplier<T> supplier) {
             this.supplier = supplier;
         }
 
@@ -51,13 +51,13 @@ public class LazyFactory {
     }
 
     private static class NonBlockingMultiThreadLazy<T> implements Lazy<T> {
-        private static Object NONE = new Object();
+        private static final Object NONE = new Object();
         private static final AtomicReferenceFieldUpdater<NonBlockingMultiThreadLazy, Object> UPDATER =
                 AtomicReferenceFieldUpdater.newUpdater(NonBlockingMultiThreadLazy.class, Object.class, "result");
         private volatile Object result = NONE;
         private Supplier<T> supplier;
 
-        NonBlockingMultiThreadLazy(Supplier<T> supplier) {
+        private NonBlockingMultiThreadLazy(Supplier<T> supplier) {
             this.supplier = supplier;
         }
 
@@ -75,20 +75,20 @@ public class LazyFactory {
         if (supplier == null) {
             throw new IllegalArgumentException("Expected non-null supplier!");
         }
-        return new OneThreadLazy<>(supplier);
+        return new OneThreadLazy(supplier);
     }
 
     public static <T> Lazy<T> createMultiThreadLazy(Supplier<T> supplier) {
         if (supplier == null) {
             throw new IllegalArgumentException("Expected non-null supplier!");
         }
-        return new MultiThreadLazy<>(supplier);
+        return new MultiThreadLazy(supplier);
     }
 
     public static <T> Lazy<T> createNonBlockingMultiThreadLazy(Supplier<T> supplier) {
         if (supplier == null) {
             throw new IllegalArgumentException("Expected non-null supplier!");
         }
-        return new NonBlockingMultiThreadLazy<>(supplier);
+        return new NonBlockingMultiThreadLazy(supplier);
     }
 }
