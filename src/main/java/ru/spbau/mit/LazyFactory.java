@@ -53,7 +53,7 @@ public final class LazyFactory {
     private static final class NonBlockingMultiThreadLazy<T> implements Lazy<T> {
         private static final Object NONE = new Object();
         private static final AtomicReferenceFieldUpdater<NonBlockingMultiThreadLazy, Object> UPDATER =
-                AtomicReferenceFieldUpdater.newUpdater(NonBlockingMultiThreadLazy.final class, Object.final class, "result");
+                AtomicReferenceFieldUpdater.newUpdater(NonBlockingMultiThreadLazy.class, Object.class, "result");
         private volatile Object result = NONE;
         private Supplier<T> supplier;
 
