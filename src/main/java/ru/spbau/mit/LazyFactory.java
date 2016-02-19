@@ -1,15 +1,15 @@
 package ru.spbau.mit;
 
-import java.util.Objects;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.function.Supplier;
 
 /**
  * Created by Сева on 09.02.2016.
  */
-public class LazyFactory {
-    private static class OneThreadLazy<T> implements Lazy<T> {
+public final class LazyFactory {
+    private LazyFactory(){};
+
+    private static final class OneThreadLazy<T> implements Lazy<T> {
         private Supplier<T> supplier;
         private T result;
 
@@ -28,7 +28,7 @@ public class LazyFactory {
         }
     }
 
-    private static class MultiThreadLazy<T> implements Lazy<T> {
+    private static final class MultiThreadLazy<T> implements Lazy<T> {
         private static final Object NONE = new Object();
         private Supplier<T> supplier;
         private volatile T result = (T) NONE;
@@ -50,10 +50,10 @@ public class LazyFactory {
         }
     }
 
-    private static class NonBlockingMultiThreadLazy<T> implements Lazy<T> {
+    private static final class NonBlockingMultiThreadLazy<T> implements Lazy<T> {
         private static final Object NONE = new Object();
         private static final AtomicReferenceFieldUpdater<NonBlockingMultiThreadLazy, Object> UPDATER =
-                AtomicReferenceFieldUpdater.newUpdater(NonBlockingMultiThreadLazy.class, Object.class, "result");
+                AtomicReferenceFieldUpdater.newUpdater(NonBlockingMultiThreadLazy.final class, Object.final class, "result");
         private volatile Object result = NONE;
         private Supplier<T> supplier;
 
