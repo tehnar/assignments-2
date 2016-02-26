@@ -15,13 +15,17 @@ import static org.junit.Assert.assertEquals;
  */
 public class TestLazy {
 
+    private static final int ITER_COUNT = 1000;
+    private static final int THREAD_COUNT = 1000;
+    private static final int ONE_SECOND = 1000;
+
     private static class RandomNumberSupplier implements Supplier<Integer> {
         private final Random random = new Random(123);
 
         @Override
         public Integer get() {
             try {
-                Thread.sleep(random.nextInt(1000));
+                Thread.sleep(random.nextInt(ONE_SECOND));
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -30,7 +34,8 @@ public class TestLazy {
     }
 
     private static class SideEffectSupplier implements Supplier<Integer> {
-        public List<Integer> evaluatedNumbers = Collections.synchronizedList(new ArrayList<>());
+        private List<Integer> evaluatedNumbers = Collections.synchronizedList(new ArrayList<>());
+
         @Override
         public Integer get() {
             int result = new RandomNumberSupplier().get();
@@ -41,6 +46,7 @@ public class TestLazy {
 
     private static class NullSupplier implements Supplier<Object> {
         private Object value = null;
+
         @Override
         public synchronized Object get() {
             if (value == null) {
@@ -58,7 +64,7 @@ public class TestLazy {
         List<Thread> threads = new ArrayList<>();
         final List results = Collections.synchronizedList(new ArrayList<>());
 
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < THREAD_COUNT; i++) {
             threads.add(new Thread(() -> results.add(lazy.get())));
         }
 
@@ -77,7 +83,7 @@ public class TestLazy {
         SideEffectSupplier supplier = new SideEffectSupplier();
         lazyFactory.apply(supplier);
         try {
-            Thread.sleep(1000);
+            Thread.sleep(ONE_SECOND);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -106,14 +112,16 @@ public class TestLazy {
         SideEffectSupplier supplier = new SideEffectSupplier();
         Lazy<Integer> lazy = lazyFactory.apply(supplier);
         Integer expectedNumber = lazy.get();
-        for (int i = 0; i < 100; i++)
+        for (int i = 0; i < ITER_COUNT; i++) {
             assertEquals(expectedNumber, lazy.get());
+        }
         assertEquals(1, supplier.evaluatedNumbers.size());
 
         NullSupplier nullSupplier = new NullSupplier();
         lazy = lazyFactory.apply(nullSupplier);
-        for (int i = 0; i < 100; i++)
+        for (int i = 0; i < ITER_COUNT; i++) {
             assertEquals(null, lazy.get());
+        }
     }
 
     public void checkLazyMultiThread(Function<Supplier, Lazy> lazyFactory, boolean checkForOnlyOneCalculation) {
