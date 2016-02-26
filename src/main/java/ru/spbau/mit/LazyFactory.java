@@ -4,7 +4,7 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.function.Supplier;
 
 /**
- * Created by Сева on 09.02.2016.
+ * Created by Seva on 09.02.2016.
  */
 public final class LazyFactory {
     private LazyFactory(){};
@@ -63,9 +63,12 @@ public final class LazyFactory {
 
         public T get() {
             if (result == NONE) {
-                T newResult = supplier.get();
-                UPDATER.compareAndSet(this, NONE, newResult);
-                supplier = null;
+                Supplier<T> currentSupplier = supplier;
+                if (currentSupplier != null) {
+                    T newResult = currentSupplier.get();
+                    UPDATER.compareAndSet(this, NONE, newResult);
+                    supplier = null;
+                }
             }
             return (T) result;
         }

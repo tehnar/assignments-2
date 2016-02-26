@@ -4,17 +4,18 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-import static org.junit.Assert.*;
-
 import java.util.*;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
+import static org.junit.Assert.assertEquals;
+
 /**
- * Created by Сева on 09.02.2016.
+ * Created by Seva on 09.02.2016.
  */
 public class TestLazy {
 
-    private static class TestSupplier implements Supplier<Integer> {
+    private static class RandomNumberSupplier implements Supplier<Integer> {
         private final Random random = new Random(123);
 
         @Override
@@ -29,11 +30,11 @@ public class TestLazy {
     }
 
     private static class SideEffectSupplier implements Supplier<Integer> {
-        public List<Integer> sideEffects = Collections.synchronizedList(new ArrayList<>());
+        public List<Integer> evaluatedNumbers = Collections.synchronizedList(new ArrayList<>());
         @Override
         public Integer get() {
-            int result = new TestSupplier().get();
-            sideEffects.add(result);
+            int result = new RandomNumberSupplier().get();
+            evaluatedNumbers.add(result);
             return result;
         }
     }
@@ -72,70 +73,81 @@ public class TestLazy {
         return results;
     }
 
-    @Test
-    public void TestOneThreadedLazy() {
+    public void checkLazinessContract(Function<Supplier, Lazy> lazyFactory) {
         SideEffectSupplier supplier = new SideEffectSupplier();
-        Lazy<Integer> lazy = LazyFactory.createLazy(supplier);
-        for (int i = 0; i < 100; i++) {
-            assertEquals(lazy.get(), lazy.get());
+        lazyFactory.apply(supplier);
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
-        assertEquals(supplier.sideEffects.size(), 1);
+        assertEquals(0, supplier.evaluatedNumbers.size()); //no evaluations were made even in a separate thread
     }
 
     @Test
-    public void TestLazyNullSupplier() {
+    public void checkLazyNullSupplier() {
         lazyNullSupplierException.expect(IllegalArgumentException.class);
         LazyFactory.createLazy(null);
+    }
 
+    @Test
+    public void checkMultiThreadLazyNullSupplier() {
         lazyNullSupplierException.expect(IllegalArgumentException.class);
         LazyFactory.createMultiThreadLazy(null);
+    }
 
+    @Test
+    public void checkNonBlockingMultiThreadLazyNullSupplier() {
         lazyNullSupplierException.expect(IllegalArgumentException.class);
         LazyFactory.createNonBlockingMultiThreadLazy(null);
     }
 
-    @Test
-    public void TestNonBlockingMultiThreadedLazy() {
-        Lazy<Integer> lazy = LazyFactory.createNonBlockingMultiThreadLazy(new TestSupplier());
+    public void checkLazyOneThread(Function<Supplier, Lazy> lazyFactory) {
+        SideEffectSupplier supplier = new SideEffectSupplier();
+        Lazy<Integer> lazy = lazyFactory.apply(supplier);
+        Integer expectedNumber = lazy.get();
+        for (int i = 0; i < 100; i++)
+            assertEquals(expectedNumber, lazy.get());
+        assertEquals(1, supplier.evaluatedNumbers.size());
 
-        List results = runLazyManyThreads(lazy);
-        assertEquals(results.stream().distinct().count(), 1);
+        NullSupplier nullSupplier = new NullSupplier();
+        lazy = lazyFactory.apply(nullSupplier);
+        for (int i = 0; i < 100; i++)
+            assertEquals(null, lazy.get());
     }
 
-    @Test
-    public void TestMultiThreadedLazy() {
+    public void checkLazyMultiThread(Function<Supplier, Lazy> lazyFactory, boolean checkForOnlyOneCalculation) {
         SideEffectSupplier supplier = new SideEffectSupplier();
-        Lazy<Integer> lazy = LazyFactory.createMultiThreadLazy(supplier);
-
+        Lazy<Integer> lazy = lazyFactory.apply(supplier);
         List result = runLazyManyThreads(lazy);
         assertEquals(result.stream().distinct().count(), 1);
-        assertEquals(supplier.sideEffects.size(), 1);
+        if (checkForOnlyOneCalculation) {
+            assertEquals(supplier.evaluatedNumbers.size(), 1);
+        }
+
+        NullSupplier nullSupplier = new NullSupplier();
+        lazy = lazyFactory.apply(nullSupplier);
+        result = runLazyManyThreads(lazy);
+        assertEquals(result.stream().distinct().count(), 1);
+        if (checkForOnlyOneCalculation) {
+            assertEquals(supplier.evaluatedNumbers.size(), 1);
+        }
     }
 
     @Test
-    public void TestNullLazySupplier() {
-        final boolean[] failed = {false};
-        final Lazy<Object> oneThreadLazy = LazyFactory.createLazy(new NullSupplier());
-        assertEquals(oneThreadLazy.get(), null);
+    public void testAll() {
+        List<Function<Supplier, Lazy>> factories = Arrays.asList(
+                LazyFactory::createLazy,
+                LazyFactory::createMultiThreadLazy,
+                LazyFactory::createNonBlockingMultiThreadLazy
+        );
 
-        final Lazy<Object> multiThreadLazy = LazyFactory.createMultiThreadLazy(new NullSupplier());
-        for (int i = 0; i < 10; i++) {
-            new Thread(() -> {
-                if (multiThreadLazy.get() != null) {
-                    failed[0] = true;
-                }
-            }).start();
+        for (Function<Supplier, Lazy> factory : factories) {
+            checkLazyOneThread(factory);
+            checkLazinessContract(factory);
         }
-        assertEquals(false, failed[0]);
 
-        final Lazy<Object> atomicMultiThreadLazy = LazyFactory.createMultiThreadLazy(new NullSupplier());
-        for (int i = 0; i < 10; i++) {
-            new Thread(()-> {
-                if (atomicMultiThreadLazy.get() != null) {
-                    failed[0] = true;
-                }
-            }).start();
-        }
-        assertEquals(false, failed[0]);
+        checkLazyMultiThread(LazyFactory::createMultiThreadLazy, true);
+        checkLazyMultiThread(LazyFactory::createNonBlockingMultiThreadLazy, false);
     }
 }
