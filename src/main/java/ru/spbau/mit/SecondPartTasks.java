@@ -71,6 +71,6 @@ public final class SecondPartTasks {
         return orders
                 .stream()
                 .flatMap(map -> map.entrySet().stream())
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (lhs, rhs) -> lhs + rhs));
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, Integer::sum));
     }
 }
