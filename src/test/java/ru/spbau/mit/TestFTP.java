@@ -18,9 +18,9 @@ public class TestFTP {
     public void simpleTest() throws IOException {
         FTPServer server = new FTPServer(TEST_PORT, TEST_FOLDER);
         FTPClient client = new FTPClient("localhost", TEST_PORT);
-        assertEquals(Arrays.asList(".\\", "123.txt", "innerFolder\\"), client.listFiles("."));
-        assertEquals(Arrays.asList("innerInnerFolder\\", "234.txt"),
-                client.listFiles("innerFolder\\innerInnerFolder"));
+        assertEquals(Arrays.asList("./", "123.txt", "innerFolder/"), client.listFiles("."));
+        assertEquals(Arrays.asList("innerInnerFolder/", "234.txt"),
+                client.listFiles("innerFolder/innerInnerFolder"));
         client.getAndSaveFile("123.txt", ".");
         assertEquals(Files.readAllLines(Paths.get(TEST_FOLDER + "/123.txt")),
                 Files.readAllLines(Paths.get("123.txt")));
