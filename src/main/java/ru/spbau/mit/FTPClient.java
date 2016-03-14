@@ -34,7 +34,7 @@ public class FTPClient implements Closeable {
         for (int i = 0; i < size; i++) {
             String filename = input.readUTF();
             if (input.readBoolean()) {
-                files.add(filename + "\\");
+                files.add(filename + "/");
             } else {
                 files.add(filename);
             }
