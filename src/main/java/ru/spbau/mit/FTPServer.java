@@ -74,20 +74,18 @@ public class FTPServer implements Closeable {
             try (
                     DataInputStream input = new DataInputStream(client.getInputStream());
                     DataOutputStream output = new DataOutputStream(client.getOutputStream())) {
-                while (!client.isClosed()) {
-                    int type = input.readInt();
-                    switch (type) {
-                        case LIST_QUERY:
-                            listQuery(output, input.readUTF());
-                            break;
+                int type = input.readInt();
+                switch (type) {
+                    case LIST_QUERY:
+                        listQuery(output, input.readUTF());
+                        break;
 
-                        case GET_QUERY:
-                            getQuery(output, input.readUTF());
-                            break;
+                    case GET_QUERY:
+                        getQuery(output, input.readUTF());
+                        break;
 
-                        default:
-                            throw new IllegalStateException("Unknown query type: " + type);
-                    }
+                    default:
+                        throw new IllegalStateException("Unknown query type: " + type);
                 }
             } catch (IOException e) {
                 e.printStackTrace();

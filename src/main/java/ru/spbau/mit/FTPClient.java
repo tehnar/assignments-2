@@ -1,9 +1,9 @@
 package ru.spbau.mit;
 
+import org.apache.commons.io.input.BoundedInputStream;
+
 import java.io.*;
 import java.net.Socket;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -42,19 +42,13 @@ public class FTPClient implements Closeable {
         return files;
     }
 
-    public void getAndSaveFile(String filename, String savePath) throws IOException {
+    public InputStream getFile(String filename) throws IOException {
         output.writeInt(GET_QUERY);
         output.writeUTF(filename);
         output.flush();
 
         long size = input.readLong();
-        OutputStream stream = Files.newOutputStream(Paths.get(savePath, filename));
-        byte[] buffer = new byte[CHUNK_SIZE];
-        while (size > 0) {
-            int readSize = input.read(buffer, 0, CHUNK_SIZE);
-            size -= readSize;
-            stream.write(buffer, 0, readSize);
-        }
+        return new BoundedInputStream(input, size);
     }
 
     @Override
