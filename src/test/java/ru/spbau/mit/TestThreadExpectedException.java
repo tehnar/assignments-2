@@ -13,7 +13,11 @@ import java.util.List;
 
 @RunWith(Enclosed.class)
 public class TestThreadExpectedException {
-    public static final int THREAD_COUNT = 1;
+    private TestThreadExpectedException() {
+    }
+
+    private static final int THREAD_COUNT = 1;
+    private static final int ONE_SECOND = 1000;
 
     public static class TestThreadExpectedExceptionNoFail {
         @Rule
@@ -34,7 +38,7 @@ public class TestThreadExpectedException {
         public void testThreadNotFinished() {
             List<Thread> threads = getThreads(() -> {
                 try {
-                    Thread.sleep(1000);
+                    Thread.sleep(ONE_SECOND);
                 } catch (InterruptedException ignored) {
                 }
             });
@@ -56,9 +60,9 @@ public class TestThreadExpectedException {
     }
 
     public static class TestThreadExpectedExceptionFail {
-        public final ExpectedException expected = ExpectedException.none();
+        private final ExpectedException expected = ExpectedException.none();
 
-        public final ThreadExpectedException expectedException = new ThreadExpectedException();
+        private final ThreadExpectedException expectedException = new ThreadExpectedException();
 
         @Rule
         public final TestRule chain = RuleChain.outerRule(expected).around(expectedException);
@@ -67,11 +71,12 @@ public class TestThreadExpectedException {
         public void testUnexpectedAliveThread() {
             List<Thread> threads = getThreads(() -> {
                 try {
-                    Thread.sleep(1000);
+                    Thread.sleep(ONE_SECOND);
                 } catch (InterruptedException ignored) {
                 }
             });
-            threads.add(new Thread(()->{}));
+            threads.add(new Thread(() -> {
+            }));
             threads.forEach(expectedException::registerThread);
             threads.forEach(Thread::start);
             expected.expect(RuntimeException.class);
@@ -91,7 +96,8 @@ public class TestThreadExpectedException {
 
         @Test
         public void testNoException() throws InterruptedException {
-            List<Thread> threads = getThreads(() -> {});
+            List<Thread> threads = getThreads(() -> {
+            });
             threads.forEach(expectedException::registerThread);
             expectedException.expect(IllegalArgumentException.class);
             expected.expect(RuntimeException.class);
