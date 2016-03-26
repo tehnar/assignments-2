@@ -30,7 +30,7 @@ public class FTPServer implements Closeable {
         this.port = port;
     }
 
-    public void start() throws IOException {
+    public void start() {
         executorService.submit(new ClientAcceptor());
     }
 
