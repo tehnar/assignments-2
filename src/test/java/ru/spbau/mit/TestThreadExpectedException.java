@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @RunWith(Enclosed.class)
-public class TestThreadExpectedException {
+public final class TestThreadExpectedException {
     private TestThreadExpectedException() {
     }
 
