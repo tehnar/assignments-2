@@ -6,58 +6,43 @@ import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
  * Created by Tehnar on 06.03.2016.
  */
 public class FTPServer implements Closeable {
-    private ServerSocket serverSocket;
+    private ServerSocket serverSocket = null;
+    private final ExecutorService executorService = Executors.newCachedThreadPool();
+    private final int port;
     private final String rootPath;
 
     private static final int LIST_QUERY = 1;
     private static final int GET_QUERY = 2;
     private static final int CHUNK_SIZE = 4096;
 
-    private final List<Socket> connectedClients = new ArrayList<>();
-
-    public FTPServer(int port, String rootPath) throws IOException {
+    public FTPServer(int port, String rootPath) {
         this.rootPath = rootPath;
-        serverSocket = new ServerSocket(port);
-        new Thread(() -> {
-            while (true) {
-                try {
-                    Socket client;
-                    synchronized (connectedClients) {
-                        client = serverSocket.accept();
-                        connectedClients.add(client);
-                    }
-                    new Thread(new ClientProcessor(client)).start();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    try {
-                        close();
-                    } catch (IOException e1) {
-                        e1.printStackTrace();
-                    }
-                    return;
-                }
-            }
-        }).start();
+        this.port = port;
+    }
+
+    public void start() throws IOException {
+        executorService.submit(new ClientAcceptor());
+    }
+
+    public void join() throws InterruptedException {
+        executorService.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
     }
 
     @Override
     public void close() throws IOException {
         if (serverSocket != null) {
             serverSocket.close();
-            synchronized (connectedClients) {
-                for (Socket socket : connectedClients) {
-                    socket.close();
-                }
-                connectedClients.clear();
-            }
+            executorService.shutdown();
         }
         serverSocket = null;
     }
@@ -77,11 +62,11 @@ public class FTPServer implements Closeable {
                 int type = input.readInt();
                 switch (type) {
                     case LIST_QUERY:
-                        listQuery(output, input.readUTF());
+                        processListQuery(output, input.readUTF());
                         break;
 
                     case GET_QUERY:
-                        getQuery(output, input.readUTF());
+                        processGetQuery(output, input.readUTF());
                         break;
 
                     default:
@@ -93,7 +78,7 @@ public class FTPServer implements Closeable {
         }
     }
 
-    private void getQuery(DataOutputStream output, String fileName) throws IOException {
+    private void processGetQuery(DataOutputStream output, String fileName) throws IOException {
         File file = Paths.get(rootPath, fileName).toFile();
         if (!file.exists() || !file.isFile()) {
             output.writeLong(0);
@@ -112,7 +97,7 @@ public class FTPServer implements Closeable {
 
     }
 
-    private void listQuery(DataOutputStream output, String listPath) throws IOException {
+    private void processListQuery(DataOutputStream output, String listPath) throws IOException {
         List<Path> files = Files.walk(Paths.get(rootPath, listPath), 1)
                 .collect(Collectors.toList());
         output.writeInt(files.size());
@@ -121,5 +106,22 @@ public class FTPServer implements Closeable {
             output.writeBoolean(path.toFile().isDirectory());
         }
         output.flush();
+    }
+
+    private class ClientAcceptor implements Runnable {
+
+        @Override
+        public void run() {
+            try (ServerSocket serverSocket = new ServerSocket(port)) {
+                FTPServer.this.serverSocket = serverSocket;
+                while (!serverSocket.isClosed()) {
+                    Socket client = serverSocket.accept();
+                    executorService.submit(new ClientProcessor(client));
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+        }
     }
 }

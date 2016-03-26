@@ -16,8 +16,10 @@ public class TestFTP {
     private static final int TEST_PORT = 4444;
 
     @Test
-    public void simpleTest() throws IOException {
+    public void simpleTest() throws IOException, InterruptedException {
         FTPServer server = new FTPServer(TEST_PORT, TEST_FOLDER);
+        server.start();
+
         FTPClient client;
 
         client = new FTPClient("localhost", TEST_PORT);
@@ -37,7 +39,8 @@ public class TestFTP {
         client = new FTPClient("localhost", TEST_PORT);
         assertArrayEquals(new byte[0],
                 IOUtils.toByteArray(client.getFile("noSuchFile.txt")));
-        server.close();
         client.close();
+        server.close();
+        server.join();
     }
 }

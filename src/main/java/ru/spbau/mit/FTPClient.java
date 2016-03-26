@@ -11,7 +11,9 @@ import java.util.List;
  * Created by Tehnar on 07.03.2016.
  */
 public class FTPClient implements Closeable {
-    private Socket connection;
+    private final int port;
+    private final String host;
+    private Socket connection = null;
     private DataInputStream input;
     private DataOutputStream output;
 
@@ -19,13 +21,21 @@ public class FTPClient implements Closeable {
     private static final int GET_QUERY = 2;
     private static final int CHUNK_SIZE = 4096;
 
-    public FTPClient(String host, int port) throws IOException {
+    public FTPClient(String host, int port) {
+        this.host = host;
+        this.port = port;
+    }
+
+    private void connect() throws IOException {
         connection = new Socket(host, port);
         input = new DataInputStream(connection.getInputStream());
         output = new DataOutputStream(connection.getOutputStream());
     }
 
     public List<String> listFiles(String path) throws IOException {
+        if (connection == null) {
+            connect();
+        }
         output.writeInt(LIST_QUERY);
         output.writeUTF(path);
         output.flush();
@@ -43,6 +53,9 @@ public class FTPClient implements Closeable {
     }
 
     public InputStream getFile(String filename) throws IOException {
+        if (connection == null) {
+            connect();
+        }
         output.writeInt(GET_QUERY);
         output.writeUTF(filename);
         output.flush();
