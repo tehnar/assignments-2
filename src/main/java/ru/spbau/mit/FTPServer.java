@@ -25,6 +25,8 @@ public class FTPServer implements Closeable {
     private static final int GET_QUERY = 2;
     private static final int CHUNK_SIZE = 4096;
 
+    private final List<Socket> connectedClients = new ArrayList<>();
+
     public FTPServer(int port, String rootPath) {
         this.rootPath = rootPath;
         this.port = port;
@@ -43,6 +45,12 @@ public class FTPServer implements Closeable {
         if (serverSocket != null) {
             serverSocket.close();
             executorService.shutdown();
+            synchronized (connectedClients) {
+                for (Socket socket : connectedClients) {
+                    socket.close();
+                }
+                connectedClients.clear();
+            }
         }
         serverSocket = null;
     }
@@ -116,6 +124,10 @@ public class FTPServer implements Closeable {
                 FTPServer.this.serverSocket = serverSocket;
                 while (!serverSocket.isClosed()) {
                     Socket client = serverSocket.accept();
+                    synchronized (connectedClients) {
+                        client = serverSocket.accept();
+                        connectedClients.add(client);
+                    }
                     executorService.submit(new ClientProcessor(client));
                 }
             } catch (IOException e) {
