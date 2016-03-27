@@ -126,7 +126,6 @@ public class FTPServer implements Closeable {
                 while (!serverSocket.isClosed()) {
                     Socket client = serverSocket.accept();
                     synchronized (connectedClients) {
-                        client = serverSocket.accept();
                         connectedClients.add(client);
                     }
                     executorService.submit(new ClientProcessor(client));
