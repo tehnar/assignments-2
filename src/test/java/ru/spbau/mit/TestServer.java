@@ -16,7 +16,9 @@ import static org.junit.Assert.assertTrue;
 
 public class TestServer {
     private static final int CLIENT_CNT = 10;
-    private static final int FILE_SIZE = 1<<20;
+    // CHECKSTYLE.OFF: MagicNumber
+    private static final int FILE_SIZE = 1 << 20;
+    // CHECKSTYLE.ON: MagicNumber
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
@@ -53,7 +55,8 @@ public class TestServer {
             });
             threads[i].start();
         }
-        for (int i = 0; i < CLIENT_CNT; i++)
+        for (int i = 0; i < CLIENT_CNT; i++) {
             threads[i].join();
+        }
     }
 }
